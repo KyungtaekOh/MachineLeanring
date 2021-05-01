@@ -1,12 +1,16 @@
 import tensorflow as tf
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras import backend as K
 from tqdm import tqdm
 from PIL import Image
+from PIL import ImageDraw
 import numpy as np
+import loss
 import os
 import xmltodict
 import random
 import math
+from tqdm import tqdm
 
 class custom_lr_scheduler(tf.keras.callbacks.Callback):
     def __init__(self, schedule):
@@ -19,7 +23,7 @@ class custom_lr_scheduler(tf.keras.callbacks.Callback):
         lr = float(tf.keras.backend.get_value(self.model.optimizer.learning_rate))
         scheduled_lr = self.schedule(epoch, lr)
         tf.keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
-        print("\nEpoch %05d: Learning rate is %6.4f." % (epoch, scheduled_lr))
+        print("Epoch %05d: Learning rate is %6.4f." % (epoch, scheduled_lr))
 
 LR_SCHEDULE = [(0, 0.01),
                (75, 0.001),
@@ -33,7 +37,7 @@ def lr_schedule(epoch, lr):
     return lr
 
 class DataGenerator(Sequence):
-    def __init__(self, info_list, batch_size, img_dir, grid_size, num_bboxes, num_classes, mode='train', shuffle=True):
+    def __init__(self, info_list, batch_size, img_dir, grid_size, num_bboxes, num_classes, shuffle=True):
         self.data_list = info_list
         self.n = len(self.data_list)
         self.batch_size = batch_size
@@ -41,7 +45,7 @@ class DataGenerator(Sequence):
         self.grid_size = grid_size
         self.num_bboxes = num_bboxes
         self.num_classes = num_classes
-        self.mode = mode
+        self.reshape_size = (448, 448)
         if shuffle:
             random.shuffle(self.data_list)
 
@@ -64,7 +68,7 @@ class DataGenerator(Sequence):
             img_name = info['img_name']
             bboxes = info['bboxes']
             labels = info['labels']
-            image = np.array(Image.open(os.path.join(self.img_dir, img_name)).resize((448, 448)))
+            image = np.array(Image.open(os.path.join(self.img_dir, img_name)).resize(self.reshape_size))
 
             x[idx] = image / 255.
             y[idx] = self.__enc_to_tensor(bboxes, labels)
@@ -91,8 +95,57 @@ class DataGenerator(Sequence):
                                                      tf.keras.utils.to_categorical(label, 20)])
         return output
 
+class Prediction:
+    def __init__(self, test_gene, output_dir, model, class_arr):
+        self.test_gene = test_gene
+        self.n = self.test_gene.n
+        self.batch_size = self.test_gene.batch_size
+        self.data_list = self.test_gene.data_list
+        self.img_dir = self.test_gene.img_dir
+        self.output_dir = output_dir
+        self.model = model
+        self.class_arr = class_arr
+        self.__prediction()
 
-def get_info(annotation_f, classes, split_rate=0.3):
+    def __prediction(self):
+        boxes = []
+        pred = self.model.predict(self.test_gene, batch_size=self.batch_size, verbose=1) # ?*7*7*30
+        for idx in tqdm(range(self.n)): # Each Image unit
+            y = pred[idx,:,:,:] # 7*7*30
+            bboxes, class_score = y[:,:,:10], y[:,:,10:] # 7*7*10, 7*7*20
+            box1_conf = K.expand_dims(bboxes[:,:,4], axis=2) # 7*7*1
+            box2_conf = K.expand_dims(bboxes[:,:,9], axis=2) # 7*7*1
+            box1_class_score = tf.where((class_score * box1_conf)<0.2, 0)
+            box2_class_score = tf.where((class_score * box2_conf)<0.2, 0)
+            box1_class_score = K.reshape(box1_class_score, (7*7,20))    # 49*20
+            box2_class_score = K.reshape(box2_class_score, (7*7,20))    # 49*20
+            boxes_class_score = K.concatenate([box1_class_score, box2_class_score], axis=0) # 98*20
+            length = boxes_class_score.shape[0] # 98
+            for i in range(length): # Class unit
+                bbox = K.argmax(boxes_class_score[:, i]).numpy()
+                bbox_class = K.argmax(boxes_class_score[bbox, :]).numpy()
+                bbox_conf = boxes_class_score[bbox, bbox_class].numpy()
+                if bbox_conf > 0.3:
+                    cell_idx = math.ceil(bbox / 2)
+                    bbox_idx = bbox % 2
+                    coord = bboxes[cell, 4*(bbox_idx):4*(bbox_idx+1)]
+                    self.__draw_box(self.data_list[idx], coord.numpy())
+                    continue
+
+    def __draw_box(self, data_info, coord):
+        image = np.array(Image.open(os.path.join(data_info['img_name'], img_name)))
+        im_w, im_h = data_info['img_size']
+        x, y, w, h = coord
+        x1, x2 = math.ceil((x-w/2)*im_w), math.ceil((x+w/2)*im_w)
+        y1, y1 = math.ceil((y-h/2)*im_h), math.ceil((y+h/2)*im_h)
+
+        draw = ImageDraw.Draw(image)
+        draw.rectangle(((x1, y1), (x2, y2)), outline(0,255,0), width=2)
+
+        image.save(os.path.join(self.output_dir,data_info['img_name']))
+        return True
+
+def get_info(annotation_f, classes):
     an_dir = annotation_f
     result = []
     class_list = classes
