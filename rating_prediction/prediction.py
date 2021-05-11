@@ -7,11 +7,11 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 model = model_resnet.getResnet50()
-weight = r'/home/cvlab09/kyung-taek/cnn/saved_weight/Resent50_epoch500_batch16_trial1.h5'
+weight = r'weight(h5_file)'
 model.load_weights(weight)
 
 
-directory = r'/home/cvlab09/kyung-taek/cnn/'
+directory = r'main_directory'
 img_dir = 'data/train/'
 file_dir = 'splited_valid.txt'
 pred = tools.Prediction(directory, img_dir, file_dir, 9)
