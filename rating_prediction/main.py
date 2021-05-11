@@ -16,7 +16,7 @@ import math
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 #
-path = r'/home/cvlab09/kyung-taek/cnn/'
+path = r'path'
 img_dir = 'data/image/'
 csv_file = 'train.txt'
 #
@@ -41,8 +41,8 @@ if not (isfile(r'/home/cvlab09/kyung-taek/cnn/splited_train.txt') and
 else:
     print('Already in directroy!')
 
-train_data_list = tools.csv2arr(r'/home/cvlab09/kyung-taek/cnn/splited_train.txt')
-valid_data_list = tools.csv2arr(r'/home/cvlab09/kyung-taek/cnn/splited_valid.txt')
+train_data_list = tools.csv2arr(r'train.txt_path')
+valid_data_list = tools.csv2arr(r'valid.txt_path')
 
 
 #################################
