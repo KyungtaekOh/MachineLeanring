@@ -13,9 +13,9 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 
-directory = r'/home/cvlab09/kyung-taek/cnn/segmentation'
-img_dir = r'/home/cvlab09/kyung-taek/cnn/data'
-csv_file = r'/home/cvlab09/kyung-taek/cnn/train.txt'
+directory = r'segmentation'
+img_dir = r'data'
+csv_file = r'train.txt'
 
 model_name = 'Unet'
 batch = 8
@@ -40,11 +40,11 @@ else:
 
 
 
-train_data_list = tools.csv2arr(r'/home/cvlab09/kyung-taek/cnn/segmentation/splited_train.txt',
+train_data_list = tools.csv2arr(r'splited_train.txt',
                                 [0, 1])
 
 
-valid_data_list = tools.csv2arr(r'/home/cvlab09/kyung-taek/cnn/segmentation/splited_valid.txt',
+valid_data_list = tools.csv2arr(r'splited_valid.txt',
                                 [0, 1])
 
 
@@ -76,13 +76,13 @@ model.compile(
     loss='binary_crossentropy',
     metrics=['acc']
 )
-checkpoint = ModelCheckpoint('/home/cvlab09/kyung-taek/cnn/saved_weight/'+save_file_name,
+checkpoint = ModelCheckpoint('saved_weight/'+save_file_name,
                              monitor='val_loss',
                              verbose=1,
                              save_best_only=True)
 myCallback = tools.myCallback()
 history_file_name = "{}_e{}_b{}_t{}_history.txt".format(model_name, epoch, batch, trial)
-history = keras.callbacks.CSVLogger('/home/cvlab09/kyung-taek/cnn/history/'+history_file_name, separator="\t", append=False)
+history = keras.callbacks.CSVLogger('history/'+history_file_name, separator="\t", append=False)
 
 model.fit(train_generator,
           steps_per_epoch=step_size_train,
