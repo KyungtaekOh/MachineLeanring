@@ -10,9 +10,9 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
-directory = r'/home/cvlab09/kyung-taek/cnn/seg_grad'
-img_dir = r'/home/cvlab09/kyung-taek/cnn/data'
-csv_dir = r'/home/cvlab09/kyung-taek/cnn/train.txt'
+directory = r'main_directory'
+img_dir = r'data'
+csv_dir = r'train.txt'
 
 batch = 4
 epoch = 100
@@ -43,12 +43,12 @@ else:
     print('Already in directroy!')
 
 
-train_data_list = tools.csv2arr(r'/home/cvlab09/kyung-taek/cnn/segmentation/splited_train.txt',
+train_data_list = tools.csv2arr(r'splited_train.txt',
                                 desired_cols=[0, 1, 2],
                                 encoding='utf-8')
 
 
-valid_data_list = tools.csv2arr(r'/home/cvlab09/kyung-taek/cnn/segmentation/splited_valid.txt',
+valid_data_list = tools.csv2arr(r'splited_valid.txt',
                                 desired_cols=[0, 1, 2],
                                 encoding='utf-8')
 
@@ -88,15 +88,15 @@ model.compile(
     metrics={'s_out':'acc', "c_out":'acc'}
 )
 
-history_file_name = "{}_t{}_history.txt".format(param['model_name'], param['trial'])
-history = tf.keras.callbacks.CSVLogger('/home/cvlab09/kyung-taek/cnn/history/'+history_file_name, separator="\t", append=True)
+history_file_name = "{}_t{}_history.txt".format("history/" + param['model_name'], param['trial'])
+history = tf.keras.callbacks.CSVLogger(history_file_name, separator="\t", append=True)
 
 custom_callback = tools.CustomCallback(patience=10, 
-                                       save_file_dir=r'/home/cvlab09/kyung-taek/cnn/saved_weight/'+save_file_name,
+                                       save_file_dir=r'saved_weight/'+save_file_name,
                                        target='val_loss')
 
 param_file_name = "{}_t{}_param.json".format(param['model_name'], param['trial'])
-param_file = open("/home/cvlab09/kyung-taek/cnn/history/" + param_file_name, "w")
+param_file = open("history/" + param_file_name, "w")
 json.dump(param, param_file, separators=(',\n', '\t:\t'))
 param_file.close()
 
