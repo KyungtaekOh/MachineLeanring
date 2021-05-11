@@ -10,7 +10,7 @@ from PIL import Image
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
-valid_data_list = tools.csv2arr(r'/home/cvlab09/kyung-taek/cnn/segmentation/test.txt',
+valid_data_list = tools.csv2arr(r'test.txt',
                                 [0, 1])
 
 img_dir = r'test/'
@@ -19,7 +19,7 @@ output_dir = r'test_results/'
 
 
 model = model_Unet.getUnet()
-weight = r'/home/cvlab09/kyung-taek/cnn/saved_weight/Unet_e100_b16_t2.h5'
+weight = r'saved_weight/Unet_e100_b16_t2.h5'
 model.load_weights(weight)
 
 pred = tools.Prediction(valid_data_list, img_dir, mask_dir, output_dir, model)
